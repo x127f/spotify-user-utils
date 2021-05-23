@@ -1,0 +1,159 @@
+// Colors
+
+$green: rgb(30, 215, 96);
+$light-black: rgb(40, 40, 40);
+$black: rgb(24, 24, 24);
+$grey: rgb(170, 170, 170);
+$sand: rgb(200, 200, 200);
+$white: rgb(255, 255, 255);
+$blue: #4688d7;
+$red: #fc615c;
+
+// Spacing
+
+$padding-xs: 5px;
+$padding-sm: 10px;
+$padding: 15px;
+$padding-lg: 30px;
+$padding-xl: 60px;
+
+$margin-xs: 5px;
+$margin-sm: 10px;
+$margin: 15px;
+$margin-lg: 30px;
+$margin-xl: 60px;
+
+// Borders
+
+$border-radius: 15px;
+
+// Font-sizes
+
+$x-small: 11px;
+$small: 14px;
+$medium: 16px;
+$large: 20px;
+$x-large: 24px;
+$xx-large: 36px;
+$xxx-large: 52px;
+
+// ===== Styles ==== //
+
+body {
+	color: $white;
+	background: $black;
+	font-family: Circular, "Roboto", sans-serif;
+
+	a {
+		color: $grey;
+
+		&:hover {
+			color: $sand;
+		}
+	}
+}
+
+::-webkit-scrollbar {
+	width: 8px;
+}
+::-webkit-scrollbar-thumb {
+	border-radius: 4px;
+	background: lighten($light-black, 6%);
+}
+
+// ==== Framework ==== //
+
+.h1,
+h1 {
+	font-size: 72px;
+	color: white;
+	text-align: center;
+}
+
+.h2,
+h2 {
+	font-size: $x-small;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	margin-bottom: $margin-xs;
+}
+
+.red {
+	color: $red;
+
+	&:hover {
+		color: darken($red, 10%);
+	}
+}
+
+.yellow {
+	color: #fdbe41;
+
+	&:hover {
+		color: darken(#fdbe41, 10%);
+	}
+}
+
+.green {
+	color: #34c94a;
+
+	&:hover {
+		color: darken(#34c94a, 10%);
+	}
+}
+
+button,
+.button {
+	border-radius: 20px;
+	border: none;
+	padding: $padding-xs $padding;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	font-size: $x-small;
+	outline: none;
+	text-decoration: none;
+	text-align: center;
+
+	&:hover {
+		cursor: pointer;
+	}
+
+	&.large {
+		font-size: 20px;
+		line-height: 1.2;
+		border-radius: 500px;
+		padding: 18px 56px 14px;
+	}
+
+	&.red {
+		background: $red;
+		color: $white;
+
+		&:hover {
+			background: lighten($red, 4%);
+		}
+	}
+
+	&.dark {
+		background: $green;
+		color: $white;
+
+		&:hover {
+			background: lighten($green, 10%);
+		}
+	}
+
+	&.light {
+		background: none;
+		color: $sand;
+
+		&:hover {
+			color: $white;
+		}
+	}
+}
+
+.page {
+	display: flex;
+	flex-direction: column;
+}

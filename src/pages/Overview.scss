@@ -1,0 +1,20 @@
+@import "../index.scss";
+
+.page.overview {
+	.playlists {
+		display: flex;
+
+		.entry {
+			cursor: pointer;
+			margin: 5px;
+			padding: 0.5rem 1rem;
+			background: $light-black;
+			max-width: 100px;
+			flex-wrap: wrap;
+
+			img {
+				width: 100%;
+			}
+		}
+	}
+}
