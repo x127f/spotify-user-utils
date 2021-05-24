@@ -12,7 +12,10 @@ export default function LandingPage() {
 			<h1 className="h1">Spotify user utilities</h1>
 			<a
 				className="button dark large"
-				href={spotify.createAuthorizeURL(["user-read-private", "user-read-email"], "")}
+				href={spotify.createAuthorizeURL(
+					["playlist-read-private", "playlist-modify-public", "playlist-modify-private"],
+					""
+				)}
 			>
 				Login with Spotify
 			</a>

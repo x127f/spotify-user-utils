@@ -7,12 +7,28 @@ const spotify = new SpotifyWebApi({
 export default spotify;
 
 spotify.createAuthorizeURL = function (scopes?: ReadonlyArray<string>, state?: string, showDialog?: boolean): string {
-	if (!scopes) scopes = ["user-read-private", "user-read-email"];
+	if (!scopes) scopes = [];
 
 	return `https://accounts.spotify.com/authorize?client_id=${this.getClientId()}&show_dialog=false&response_type=token&redirect_uri=${this.getRedirectURI()}&scope=${encodeURIComponent(
 		scopes.join(" ")
 	)}&state=${state}`;
 };
+
+export async function getAllUserPlaylists() {
+	var playlists: SpotifyApi.ListOfUsersPlaylistsResponse;
+
+	do {
+		const response = await spotify.getUserPlaylists({
+			limit: 50,
+			// @ts-ignore
+			offset: playlists?.offset + playlists?.limit || 0,
+		});
+		// @ts-ignore
+		playlists = { ...response.body, items: (playlists?.items || []).concat(response.body.items) };
+	} while (playlists.next);
+
+	return playlists;
+}
 
 // @ts-ignore
 window.test = spotify;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import spotify from "../util/spotify";
+import { getAllUserPlaylists } from "../util/spotify";
 import "./Overview.scss";
 import Playlist from "../components/Playlist";
 import "missing-native-js-functions";
@@ -10,7 +10,7 @@ export default function OverviewPage() {
 
 	useEffect(() => {
 		console.log("fetch playlists");
-		spotify.getUserPlaylists({ limit: 50 }).then((x) => setPlaylist(x.body.items));
+		getAllUserPlaylists().then((x) => setPlaylist(x.items));
 		return;
 	}, []);
 
@@ -23,14 +23,14 @@ export default function OverviewPage() {
 			<div className="playlists">
 				{playlists.length === 0 && "You don't have any playlists :("}
 				{playlists.map((x) => (
-					<div onClick={() => selectPlaylist(x.id)} key={x.id} className="entry">
+					<div onClick={selectPlaylist.bind(null, x.id)} key={x.id} className="entry">
 						<img src={x.images.first()?.url}></img>
 						{x.name}
 					</div>
 				))}
 			</div>
 
-			{selectedPlaylist && <Playlist></Playlist>}
+			{selectedPlaylist && <Playlist id={selectedPlaylist}></Playlist>}
 		</div>
 	);
 }
