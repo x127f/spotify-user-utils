@@ -27,6 +27,8 @@ export default function Playlist({
 	const [excludedGenres, setExcludedGenres] = useState<string[]>([]);
 	const [onlyTopGenre, setOnlyTopGenre] = useState(false);
 	const [progress, setProgress] = useState(false);
+	// const [clearPlaylists, setClearPlaylists] = useState(false);
+	const [previewUrl, setPreviewUrl] = useState(null);
 
 	const playlists = [...pl];
 
@@ -145,6 +147,8 @@ export default function Playlist({
 		setExcludedGenres(list);
 	}
 
+	console.log({ previewUrl });
+
 	return (
 		<div className="playlist">
 			{playlist.tracks.items.length !== playlist.tracks.total && (
@@ -190,6 +194,15 @@ export default function Playlist({
 					Only filter by main genre of song
 				</label>
 
+				{/* <label>
+					<input
+						type="checkbox"
+						value={clearPlaylists}
+						onChange={(e) => setclearPlaylists(e.target.checked)}
+					/>
+					Clear genre playlists
+				</label> */}
+
 				<div>
 					<button className="button" style={{ fontSize: "0.6rem" }} onClick={() => convert(true)}>
 						Recalculate
@@ -223,25 +236,39 @@ export default function Playlist({
 				</div>
 			</div>
 
-			<div className="tracks">
-				<div className="heading">
-					<div className="number">#</div>
+			{previewUrl && <audio src={previewUrl} controls autoPlay loop></audio>}
 
-					<div className="title">Song</div>
+			<table className="tracks">
+				<thead className="heading">
+					<td className="number">#</td>
 
-					<div className="length">Length</div>
-				</div>
+					<td className="title">Song</td>
+					<td className="genre">Genre</td>
 
-				{playlist.tracks.items.map((x, i) => (
-					<div className="track" key={x.track.id + i + playlist.id}>
-						<div className="number">{i + 1}</div>
+					<td className="length">Length</td>
+				</thead>
 
-						<div className="title">{x.track.name}</div>
+				<tbody>
+					{playlist.tracks.items.map((x, i) => (
+						<tr
+							onClick={setPreviewUrl.bind(null, x.track.preview_url)}
+							className="track"
+							key={x.track.id + i + playlist.id}
+						>
+							<td className="number">{i + 1}</td>
 
-						<div className="length">{millisToMinutesAndSeconds(x.track.duration_ms)}</div>
-					</div>
-				))}
-			</div>
+							<td className="title">{x.track.name}</td>
+							<td className="genre">
+								{x.track.genres.map((x) => (
+									<p>{x}</p>
+								))}
+							</td>
+
+							<td className="length">{millisToMinutesAndSeconds(x.track.duration_ms)}</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
 		</div>
 	);
 }

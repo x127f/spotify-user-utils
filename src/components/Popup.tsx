@@ -6,7 +6,6 @@ export function Popup({ open, children, setOpen }: { open: boolean; children: Re
 
 	useEffect(() => {
 		function eventhandler(event: Event) {
-			console.log(ref.current, event.target);
 			// @ts-ignore
 			if (ref.current && !ref?.current?.contains(event.target)) {
 				setOpen(false);

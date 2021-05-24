@@ -7,6 +7,11 @@
 		}
 	}
 
+	audio {
+		position: sticky;
+		top: 0;
+	}
+
 	.popup {
 		.yellow {
 			position: sticky;
@@ -69,24 +74,16 @@
 		}
 	}
 
-	.track {
-		.title {
-			width: 70%;
-		}
-	}
-
 	.tracks {
-		display: flex;
-		flex-flow: column wrap;
+		border-spacing: 0;
 		margin-bottom: $margin;
 
 		.heading {
 			color: $grey;
 			height: 42px;
-
-			display: flex;
-			flex-flow: row wrap;
-			align-items: center;
+			// display: flex;
+			// flex-flow: row wrap;
+			// align-items: center;
 
 			.number {
 				margin-left: $margin-sm;
@@ -112,19 +109,21 @@
 			}
 		}
 
-		.track {
-			border-top: 1px solid $light-black;
-			height: 42px;
-			display: flex;
-			flex-flow: row wrap;
-			align-items: center;
+		tr:nth-child(even) {
+			background-color: $light-black;
+		}
 
-			&:hover {
-				background: $light-black;
-			}
+		.track {
+			// border-top: 1px solid $light-black;
+			height: 42px;
+			cursor: pointer;
+			padding: 0.5rem;
+			// display: flex;
+			// flex-flow: row wrap;
+			// align-items: center;
 
 			&:last-child {
-				border-bottom: 1px solid $light-black;
+				// border-bottom: 1px solid $light-black;
 			}
 
 			.art {
@@ -175,6 +174,13 @@
 				padding-right: $padding-sm;
 			}
 
+			.genre {
+				width: 10%;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+
 			.length {
 				margin-left: auto;
 				color: $grey;
@@ -222,7 +228,6 @@
 	.playlist {
 		.tracks {
 			.track {
-				height: auto;
 				padding: $padding-sm 0;
 			}
 		}
