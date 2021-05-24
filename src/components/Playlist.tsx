@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from "react";
 import spotify, { getAllUserPlaylists } from "../util/spotify";
 import "./Playlist.scss";
@@ -11,7 +12,6 @@ function millisToMinutesAndSeconds(millis: number) {
 
 export default function Playlist({ id }: { id: string }) {
 	const [playlist, setPlaylist] = useState<SpotifyApi.SinglePlaylistResponse | null>(null);
-	const [_, updateArtists] = useState(0);
 	const artists = new Map<string, SpotifyApi.ArtistObjectFull>();
 
 	async function handleTracks(items: SpotifyApi.PlaylistTrackObject[]) {
