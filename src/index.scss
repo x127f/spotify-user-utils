@@ -72,7 +72,7 @@ h1 {
 
 .h2,
 h2 {
-	font-size: $x-small;
+	font-size: $large;
 	text-transform: uppercase;
 	letter-spacing: 1px;
 	margin-bottom: $margin-xs;
@@ -144,11 +144,11 @@ button,
 	}
 
 	&.light {
-		background: none;
-		color: $sand;
+		background: $white;
+		color: $black;
 
 		&:hover {
-			color: $white;
+			background: $sand;
 		}
 	}
 }
@@ -156,4 +156,5 @@ button,
 .page {
 	display: flex;
 	flex-direction: column;
+	min-height: 70vh;
 }

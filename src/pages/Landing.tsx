@@ -19,6 +19,13 @@ export default function LandingPage() {
 			>
 				Login with Spotify
 			</a>
+
+			<br />
+			<h2>Features</h2>
+			<ul>
+				<li>Sort your playlist by gerne and further divide them into separate playlists</li>
+				<li>More coming soon ...</li>
+			</ul>
 		</div>
 	);
 }

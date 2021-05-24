@@ -1,0 +1,21 @@
+.footer {
+	margin-top: 1rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	width: 100%;
+
+	a {
+		flex-direction: column;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-decoration: none;
+		margin-top: 1rem;
+
+		img {
+			margin-top: 0.5rem;
+			width: 64px;
+		}
+	}
+}

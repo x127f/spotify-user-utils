@@ -6,6 +6,7 @@ import LandingPage from "./pages/Landing";
 import AuthenticatePage from "./pages/Authenticate";
 import OverviewPage from "./pages/Overview";
 import { useAuth } from "./util/spotify";
+import { Footer } from "./components/Footer";
 
 function App() {
 	return (
@@ -48,6 +49,7 @@ ReactDOM.render(
 				<App></App>
 			</Switch>
 		</BrowserRouter>
+		<Footer />
 	</React.StrictMode>,
 	document.getElementById("root")
 );

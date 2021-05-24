@@ -21,7 +21,7 @@ export default function OverviewPage() {
 			<h1>Overview</h1>
 
 			<div className="playlists">
-				{playlists.length === 0 && "You don't have any playlists :("}
+				{playlists.length === 0 && "Loading ... or you don't have any playlists"}
 				{playlists.map((x) => (
 					<div onClick={selectPlaylist.bind(null, x.id)} key={x.id} className="entry">
 						<img src={x.images.first()?.url}></img>
@@ -30,7 +30,7 @@ export default function OverviewPage() {
 				))}
 			</div>
 
-			{selectedPlaylist && <Playlist id={selectedPlaylist}></Playlist>}
+			{selectedPlaylist && <Playlist id={selectedPlaylist} playlists={playlists}></Playlist>}
 		</div>
 	);
 }

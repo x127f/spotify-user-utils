@@ -1,0 +1,33 @@
+.popup {
+	position: fixed;
+	top: 10%;
+	left: 10%;
+	width: 80%;
+	height: 80%;
+	overflow-y: auto;
+	visibility: hidden;
+	background: #000000e5;
+	border-radius: 1rem;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+
+	&.open {
+		visibility: visible;
+	}
+
+	> * {
+		margin: 1rem;
+		text-align: center;
+	}
+
+	li {
+		text-align: left;
+	}
+
+	.button {
+		padding: 0.8rem;
+		font-size: 0.9rem;
+	}
+}
