@@ -2,7 +2,7 @@ import SpotifyWebApi from "spotify-web-api-node";
 
 const spotify = new SpotifyWebApi({
 	clientId: "08fd6454a22949ffadc8fe002459003b",
-	redirectUri: "http://localhost:3000/authenticate",
+	redirectUri: "https://spotify-user-utils.vercel.app/authenticate" || "http://localhost:3000/authenticate",
 });
 export default spotify;
 
