@@ -1,6 +1,20 @@
 @import "../index.scss";
 
 .playlist {
+	.genres {
+		li {
+			cursor: pointer;
+		}
+	}
+
+	.popup {
+		.yellow {
+			position: sticky;
+			top: 0;
+			background: #020202;
+		}
+	}
+
 	.info {
 		margin-bottom: $margin;
 		display: flex;
