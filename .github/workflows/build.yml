@@ -2,7 +2,7 @@ name: React app deployement
 
 on:
   push:
-    branches: [master]
+    branches: [main]
 
 jobs:
   build:
