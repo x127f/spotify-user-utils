@@ -144,7 +144,7 @@ export default function Playlist({
 			i++;
 			listGenrePlaylists.push(genre+' - '+songs.length);
 			if (noDuplicates) allTracks = allTracks.filter((x) => !songs.includes(x));
-			console.log('allTracks.length='+allTracks.length);
+
 			if (doCount) continue;
 
 			var list = playlists.find((x) => x.name.toLowerCase() === genre.toLowerCase());
