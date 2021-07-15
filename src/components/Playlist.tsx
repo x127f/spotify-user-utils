@@ -26,6 +26,7 @@ export default function Playlist({
 	const [genres, setGenres] = useState<string[]>([]);
 	const [excludedGenres, setExcludedGenres] = useState<string[]>([]);
 	const [onlyTopGenre, setOnlyTopGenre] = useState(false);
+	const [noDuplicates, setNoDuplicates] = useState(true);
 	const [progress, setProgress] = useState(false);
 	// const [clearPlaylists, setClearPlaylists] = useState(false);
 	const [previewUrl, setPreviewUrl] = useState(null);
@@ -83,30 +84,66 @@ export default function Playlist({
 	async function convert(doCount = false) {
 		if (!playlist) return;
 		// spotify
-		const genres = playlist.tracks.items
+		const noGenre = 'undefined';
+		const splitRE = /(?: *[,;/] *)+/;
+		let allTracks = playlist.tracks.items;
+		
+		let genres0 = allTracks
 			.map((x) => x.track.genres || [])
 			.flat()
 			.unique();
 
+		let textArea = document.getElementById("textareaId");
+		let keywords = textArea.value.split("\n")
+			.filter(word => word !== '')
+			.unique();
+		
+		if (keywords.length) {
+			genres0 = genres0.map((x) => {
+				for (let line of keywords) {
+					const words = line.split(splitRE)
+						.filter(w => w !== '')
+						.unique();
+					for (let word of words)
+						if(x.search(word) !== -1) return line;
+				}
+				return x;
+			});
+		}
+		genres0.push(noGenre);
+		const genres = genres0.unique();
+		
 		const listGenrePlaylists = [];
 
 		var i = 0;
 		const percentage = 100 / count;
-
+		
+		
 		for (const genre of genres) {
-			var songs = playlist.tracks.items
+			var songs = allTracks
 				.filter((x) => {
-					if (onlyTopGenre) return (x.track.genres || []).first() === genre;
-					return (x.track.genres || []).includes(genre);
-				})
-				.map((x) => x.track.uri);
+					let curGenres = x.track.genres || [];
+					if (curGenres.length) {
+						if (onlyTopGenre) curGenres.first();
+						for (let iter of curGenres) {
+							const words = genre.split(splitRE)
+								.filter(w => w !== '')
+								.unique();
+							for (let word of words)
+								if(iter.search(word) !== -1) return true;
+						}
+					} else if (genre == noGenre) return true;
+					return false;
+				});
+				
 			if (songs.length < minimumSizePlaylist) continue;
 			if (excludedGenres.includes(genre)) {
 				listGenrePlaylists.push(genre);
 				continue;
 			}
 			i++;
-			listGenrePlaylists.push(genre);
+			listGenrePlaylists.push(genre+' - '+songs.length);
+			if (noDuplicates) allTracks = allTracks.filter((x) => !songs.includes(x));
 
 			if (doCount) continue;
 
@@ -121,17 +158,16 @@ export default function Playlist({
 			var j = 1;
 
 			while (songs.length) {
-				const batch = songs.slice(0, 100);
+				const batch = songs.slice(0, 100).map((x) => x.track.uri);
 				songs = songs.slice(100);
 				j += songs.length;
 
-				await spotify.replaceTracksInPlaylist(list.id, batch);
+				await spotify.addTracksToPlaylist(list.id, batch);
 				setProgress(percentage * i * songPercentage * j);
 			}
 
 			setProgress(percentage * i);
 		}
-
 		setCount(i);
 		setGenres(listGenrePlaylists);
 	}
@@ -177,7 +213,14 @@ export default function Playlist({
 						</li>
 					))}
 				</ul>
-
+				
+				<label>
+					<textarea id="textareaId"
+					rows="5" cols="33">
+					</textarea>
+					<br />Combine genres by keywords
+				</label>
+				
 				<label>
 					<input
 						type="number"
@@ -192,6 +235,11 @@ export default function Playlist({
 				<label>
 					<input type="checkbox" value={onlyTopGenre} onChange={(e) => setOnlyTopGenre(e.target.checked)} />
 					Only filter by main genre of song
+				</label>
+
+				<label>
+					<input type="checkbox" value={noDuplicates} onChange={(e) => setNoDuplicates(e.target.checked)} />
+					Do not duplicate songs
 				</label>
 
 				{/* <label>
