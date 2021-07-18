@@ -105,7 +105,7 @@ export default function Playlist({
 						.filter(w => w !== '')
 						.unique();
 					for (let word of words)
-						if(x.match(word)) return line;
+						if(x.search(word) !== -1) return line;
 				}
 				return x;
 			});
@@ -162,7 +162,7 @@ export default function Playlist({
 				songs = songs.slice(100);
 				j += songs.length;
 
-				await spotify.replaceTracksInPlaylist(list.id, batch);
+				await spotify.addTracksToPlaylist(list.id, batch);
 				setProgress(percentage * i * songPercentage * j);
 			}
 
