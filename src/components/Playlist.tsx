@@ -86,8 +86,8 @@ export default function Playlist({
 		// spotify
 		const noGenre = 'undefined';
 		const splitRE = /(?: *[,;/] *)+/;
-		let allTracks = playlist.tracks.items;
-		
+		let allTracks = [...playlist.tracks.items];
+
 		let genres0 = allTracks
 			.map((x) => x.track.genres || [])
 			.flat()
@@ -122,9 +122,9 @@ export default function Playlist({
 		for (const genre of genres) {
 			var songs = allTracks
 				.filter((x) => {
-					let curGenres = x.track.genres || [];
+					let curGenres = [...x.track.genres];
 					if (curGenres.length) {
-						if (onlyTopGenre) curGenres.first();
+						if (onlyTopGenre) curGenres.length = 1;
 						for (let iter of curGenres) {
 							const words = genre.split(splitRE)
 								.filter(w => w !== '')
@@ -233,12 +233,12 @@ export default function Playlist({
 				</label>
 
 				<label>
-					<input type="checkbox" value={onlyTopGenre} onChange={(e) => setOnlyTopGenre(e.target.checked)} />
+					<input type="checkbox" checked={onlyTopGenre} onChange={(e) => setOnlyTopGenre(e.target.checked)} />
 					Only filter by main genre of song
 				</label>
 
 				<label>
-					<input type="checkbox" value={noDuplicates} onChange={(e) => setNoDuplicates(e.target.checked)} />
+					<input type="checkbox" checked={noDuplicates} onChange={(e) => setNoDuplicates(e.target.checked)}/>
 					Do not duplicate songs
 				</label>
 
