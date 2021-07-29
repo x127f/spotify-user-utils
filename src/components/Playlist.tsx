@@ -84,7 +84,6 @@ export default function Playlist({
 	async function convert(doCount = false) {
 		if (!playlist) return;
 		// spotify
-		console.log(playlist.tracks.items);
 		const noGenre = 'undefined';
 		const splitRE = /(?: *[,;/] *)+/;
 		let allTracks = [...playlist.tracks.items];
