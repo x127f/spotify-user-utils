@@ -172,6 +172,36 @@ export default function Playlist({
 		setGenres(listGenrePlaylists);
 	}
 
+	async function dedup() {
+		if (!playlist) return;
+		let dupPositions = playlist.tracks.items
+			.map((x) => x.track.uri)
+			.map((x, i, a) => {
+				const curIndex = a.indexOf(x);
+				return curIndex != i ? i : -1;
+			})
+			.filter((x) => x >= 0)
+			.sort((x, y) => y - x);
+
+ 		const dupNum = dupPositions.length;
+		if (dupNum) {
+			const allow = window.confirm('Delete '+dupNum+' duplicated tracks?');
+			if (allow) {
+				while (dupPositions.length) {
+					const list = (await spotify.getPlaylist(playlist.id)).body;
+					const batch = dupPositions.slice(0, 100);
+					dupPositions = dupPositions.slice(100);
+					await spotify.removeTracksFromPlaylistByPosition(list.id, batch, list.snapshot_id);
+					batch.forEach((x) => playlist.tracks.items.splice(x));
+				}
+				window.location.reload(false);
+			}
+		} else {
+			alert('No duplicates!');
+		}
+		//TODO: Better UI
+	}
+	
 	if (!playlist) return <div>Loading playlist ...</div>;
 
 	function toggleGenre(genre) {
@@ -279,6 +309,9 @@ export default function Playlist({
 					<div className="actions">
 						<button onClick={() => openPopup(true) || convert(true)} className="button light save">
 							Separate into genres
+						</button>
+						<button onClick={() => dedup()} className="button light save">
+							Remove duplicates
 						</button>
 					</div>
 				</div>
