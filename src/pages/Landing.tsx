@@ -4,8 +4,8 @@ import "./Landing.scss";
 
 export default function LandingPage() {
 	const access_token = useAuth();
-	console.log({ access_token });
-	if (access_token) return <Redirect to="/overview"></Redirect>;
+	//console.log({ access_token });
+	if (access_token) return <Redirect to="/overview"/>;
 
 	return (
 		<div className="page landing">
@@ -13,7 +13,7 @@ export default function LandingPage() {
 			<a
 				className="button dark large"
 				href={spotify.createAuthorizeURL(
-					["playlist-read-private", "playlist-modify-public", "playlist-modify-private"],
+					["user-read-private", "playlist-read-private", "playlist-modify-public", "playlist-modify-private"],
 					""
 				)}
 			>
@@ -24,7 +24,7 @@ export default function LandingPage() {
 			<h2>Features</h2>
 			<ul>
 				<li>Sort your playlist by gerne and further divide them into separate playlists</li>
-				<li>More coming soon ...</li>
+				<li>Clean from duplicated and unavailable tracks</li>
 			</ul>
 		</div>
 	);

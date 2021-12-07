@@ -4,10 +4,11 @@ import "./Authenticate.scss";
 
 export default function AuthenticatePage() {
 	if (window.location.hash) {
+		// eslint-disable-next-line
 		var { access_token, token_type, expires_in } = Object.fromEntries(
 			new URLSearchParams(window.location.hash.slice(1)).entries()
 		);
-		if (!access_token) return <Redirect to="/"></Redirect>;
+		if (!access_token) return <Redirect to="/"/>;
 
 		spotify.setAccessToken(access_token);
 		localStorage.setItem("access_token", access_token);
@@ -17,8 +18,9 @@ export default function AuthenticatePage() {
 			window.location.reload();
 		}, 1000 * Number(expires_in));
 
-		return <Redirect to="/overview"></Redirect>;
+		return <Redirect to="/overview"/>;
 	} else {
+		// eslint-disable-next-line
 		var { error, state } = Object.fromEntries(new URLSearchParams(window.location.search).entries());
 
 		return (

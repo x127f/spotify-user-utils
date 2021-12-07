@@ -1,13 +1,12 @@
 @import "../index.scss";
 
 .page.overview {
-	.playlists {
+	.playlists, .playlistsDedup {
 		display: flex;
 		overflow-x: scroll;
 		width: 100%;
-		margin-bottom: 1rem;
 
-		.entry {
+		.entry, .entryDedup {
 			cursor: pointer;
 			margin: 5px;
 			padding: 0.5rem 1rem;
@@ -22,4 +21,19 @@
 			}
 		}
 	}
+	.playlists {
+		margin-bottom: 1rem;
+    }
+}
+
+.centeredText {
+	width: 100%;
+	text-align: center;
+}
+
+.dedupText {
+	width: 100%;
+	background: $light-black;
+	margin: 5px;
+	padding: 0.5rem 1rem;
 }

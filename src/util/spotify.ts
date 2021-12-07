@@ -1,7 +1,7 @@
 import SpotifyWebApi from "spotify-web-api-node";
 
 const spotify = new SpotifyWebApi({
-	clientId: "08fd6454a22949ffadc8fe002459003b",
+	clientId: "570657b1b2564136a6bdc06e90fbe78d",
 	redirectUri:
 		process.env.NODE_ENV === "development"
 			? "http://localhost:3000/authenticate"

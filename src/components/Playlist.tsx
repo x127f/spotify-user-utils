@@ -1,9 +1,9 @@
 // @ts-nocheck
-import { useEffect, useState } from "react";
-import spotify, { getAllUserPlaylists } from "../util/spotify";
+import {useEffect, useState} from "react";
+import spotify from "../util/spotify";
 import "./Playlist.scss";
 import "missing-native-js-functions";
-import { Popup } from "./Popup";
+import {Popup} from "./Popup";
 
 function millisToMinutesAndSeconds(millis: number) {
 	var minutes = Math.floor(millis / 60000);
@@ -12,9 +12,9 @@ function millisToMinutesAndSeconds(millis: number) {
 }
 
 export default function Playlist({
-	id,
-	playlists: pl,
-}: {
+	                                 id,
+	                                 playlists: pl,
+                                 }: {
 	id: string;
 	playlists: SpotifyApi.PlaylistObjectSimplified[];
 }) {
@@ -30,11 +30,14 @@ export default function Playlist({
 	const [progress, setProgress] = useState(false);
 	// const [clearPlaylists, setClearPlaylists] = useState(false);
 	const [previewUrl, setPreviewUrl] = useState(null);
+	const [user, setUser] = useState(null);
+	const [country, setCountry] = useState('');
 
 	const playlists = [...pl];
 
+	// eslint-disable-next-line
 	async function handleTracks(items: SpotifyApi.PlaylistTrackObject[]) {
-		items = items.filter((x) => !!x.track.id); // filter local songs
+		// items = items.filter((x) => !!x.track.id); // filter local songs
 
 		var artistIds = items
 			.map((x) => x.track.artists.map((y) => y.id))
@@ -47,8 +50,8 @@ export default function Playlist({
 			const batch = artistIds.slice(0, 50);
 			artistIds = artistIds.slice(50);
 
-			const { body } = await spotify.getArtists(batch);
-			body.artists.forEach((x) => artists.set(x.id, x));
+			const {body} = await spotify.getArtists(batch);
+			body.artists.forEach((x) => { if (x && x.id) artists.set(x.id, x) });
 		}
 
 		items.forEach(
@@ -61,24 +64,37 @@ export default function Playlist({
 		return items;
 	}
 
-	useEffect(() => {
-		console.log("fetch playlist");
-		spotify.getPlaylist(id, {}).then(async ({ body: state }) => {
+	function refreshPlaylist(inCountry: string = '') {
+		if (!inCountry) inCountry = country;
+		if (!inCountry) return;
+
+		spotify.getPlaylist(id, {market: inCountry}).then(async ({body: state}) => {
 			state.tracks.items = await handleTracks(state.tracks.items);
 			setPlaylist(state);
 
 			while (state.tracks.next) {
-				console.log("fetch tracks", state.tracks);
+				// console.log("fetch tracks", state.tracks);
 
-				const { body: tracks } = await spotify.getPlaylistTracks(id, {
-					offset: state.tracks.offset + state.tracks.limit,
+				const {body: tracks} = await spotify.getPlaylistTracks(id, {
+					market: inCountry,
+					offset: state.tracks.offset + state.tracks.limit
 				});
 
-				state.tracks = { ...tracks, items: state.tracks.items.concat(await handleTracks(tracks.items)) };
+				state.tracks = {...tracks, items: state.tracks.items.concat(await handleTracks(tracks.items))};
 
-				setPlaylist({ ...state });
+				setPlaylist({...state});
 			}
 		});
+	}
+
+	useEffect(() => {
+		// console.log("fetch playlist");
+		spotify.getMe().then(async ({body: state}) => {
+			setUser(state);
+			setCountry(state.country);
+			refreshPlaylist(state.country);
+		});
+		// eslint-disable-next-line
 	}, [id]);
 
 	async function convert(doCount = false) {
@@ -97,7 +113,7 @@ export default function Playlist({
 		let keywords = textArea.value.split("\n")
 			.filter(word => word !== '')
 			.unique();
-		
+
 		if (keywords.length) {
 			genres0 = genres0.map((x) => {
 				for (let line of keywords) {
@@ -105,20 +121,20 @@ export default function Playlist({
 						.filter(w => w !== '')
 						.unique();
 					for (let word of words)
-						if(x.search(word) !== -1) return line;
+						if (x.search(word) !== -1) return line;
 				}
 				return x;
 			});
 		}
 		genres0.push(noGenre);
 		const genres = genres0.unique();
-		
+
 		const listGenrePlaylists = [];
 
 		var i = 0;
 		const percentage = 100 / count;
-		
-		
+
+
 		for (const genre of genres) {
 			var songs = allTracks
 				.filter((x) => {
@@ -130,26 +146,34 @@ export default function Playlist({
 								.filter(w => w !== '')
 								.unique();
 							for (let word of words)
-								if(iter.search(word) !== -1) return true;
+								if (iter.search(word) !== -1) return true;
 						}
-					} else if (genre == noGenre) return true;
+					} else if (genre === noGenre) return true;
 					return false;
 				});
-				
+
 			if (songs.length < minimumSizePlaylist) continue;
 			if (excludedGenres.includes(genre)) {
 				listGenrePlaylists.push(genre);
 				continue;
 			}
 			i++;
-			listGenrePlaylists.push(genre+' - '+songs.length);
-			if (noDuplicates) allTracks = allTracks.filter((x) => !songs.includes(x));
+			listGenrePlaylists.push(genre + ' - ' + songs.length);
+			if (noDuplicates) {
+				let filterDups = [];
+				for (let i = 0; i < allTracks.length; i++) {
+					const iter = allTracks[i];
+					if (!songs.includes(iter))
+						filterDups.push(iter);
+				}
+				allTracks = filterDups;
+			}
 
 			if (doCount) continue;
 
 			var list = playlists.find((x) => x.name.toLowerCase() === genre.toLowerCase());
 			if (!list) {
-				list = (await spotify.createPlaylist(genre, { public: false, description: `${genre} autogenerated` }))
+				list = (await spotify.createPlaylist(genre, {public: false, description: `${genre} autogenerated`}))
 					.body;
 				playlists.push(list);
 			}
@@ -172,36 +196,68 @@ export default function Playlist({
 		setGenres(listGenrePlaylists);
 	}
 
-	async function dedup() {
-		if (!playlist) return;
-		let dupPositions = playlist.tracks.items
-			.map((x) => x.track.uri)
-			.map((x, i, a) => {
-				const curIndex = a.indexOf(x);
-				return curIndex != i ? i : -1;
-			})
-			.filter((x) => x >= 0)
-			.sort((x, y) => y - x);
+	enum ERemovalMode {
+		Dedup,
+		Unavailable
+	}
 
- 		const dupNum = dupPositions.length;
-		if (dupNum) {
-			const allow = window.confirm('Delete '+dupNum+' duplicated tracks?');
+	async function removeTracks(curPlaylist: SpotifyApi.SinglePlaylistResponse, mode: ERemovalMode) {
+		if (!curPlaylist) return;
+
+		let trackPos = [...curPlaylist.tracks.items];
+		let str = '';
+		switch (+mode) {
+			case ERemovalMode.Dedup:
+				str = ' duplicated ';
+				//search for duplicates...
+				trackPos = trackPos
+					.map((x) => x.track.uri)
+					.map((x, i, a) => a.indexOf(x) !== i ? i : -1);
+
+				break;
+			case ERemovalMode.Unavailable:
+				str = ' unavailable ';
+				//search for unavailables songs...
+				trackPos = trackPos
+					.map((x, i) =>
+						(x.track.type === 'track' && x.track.is_playable === false) ? i : -1);
+				break;
+			default:
+				return;
+		}
+		//...and leave only them
+		trackPos = trackPos.filter((x) => x >= 0);
+
+		//get track names
+		let trackNames = [];
+		for (let i = 0; i < trackPos.length; ++i) {
+			const track = curPlaylist.tracks.items[trackPos[i]].track;
+			trackNames.push((trackPos[i] + 1) + '-' + track.name);
+		}
+
+		//sorting in descending order
+		trackPos = trackPos.sort((x, y) => y - x);
+
+		//removing
+		if (trackPos.length) {
+			const allow = window.confirm(`Delete ${trackPos.length} ${str} tracks?\n${trackNames.toString()}`);
 			if (allow) {
-				while (dupPositions.length) {
-					const list = (await spotify.getPlaylist(playlist.id)).body;
-					const batch = dupPositions.slice(0, 100);
-					dupPositions = dupPositions.slice(100);
+				while (trackPos.length) {
+					const list = (await spotify.getPlaylist(curPlaylist.id)).body;
+					const batch = trackPos.slice(0, 100);
+					trackPos = trackPos.slice(100);
 					await spotify.removeTracksFromPlaylistByPosition(list.id, batch, list.snapshot_id);
-					batch.forEach((x) => playlist.tracks.items.splice(x));
+					batch.forEach((x) => curPlaylist.tracks.items.splice(x));
 				}
-				window.location.reload(false);
+				// curPlaylist.tracks.total = curPlaylist.tracks.items.length;
+				refreshPlaylist();
 			}
 		} else {
-			alert('No duplicates!');
+			alert('No' + str + 'tracks!');
 		}
 		//TODO: Better UI
 	}
-	
+
 	if (!playlist) return <div>Loading playlist ...</div>;
 
 	function toggleGenre(genre) {
@@ -213,22 +269,22 @@ export default function Playlist({
 		setExcludedGenres(list);
 	}
 
-	console.log({ previewUrl });
+	// console.log({ previewUrl });
 
 	return (
 		<div className="playlist">
 			{playlist.tracks.items.length !== playlist.tracks.total && (
-				<progress max={playlist.tracks.total} value={playlist.tracks.items.length}></progress>
+				<progress max={playlist.tracks.total} value={playlist.tracks.items.length}/>
 			)}
 
 			<Popup open={popup} setOpen={openPopup}>
-				<h1 style={{ fontSize: "3rem" }}>Separate into genres</h1>
+				<h1 style={{fontSize: "3rem"}}>Separate into genres</h1>
 				{count ? (
 					<p className="yellow">Warning this will generate {count} new genre playlists</p>
 				) : (
 					<p>
 						Sorry but your playlist is too small,
-						<br />
+						<br/>
 						change the minimum size of genre playlist
 					</p>
 				)}
@@ -237,20 +293,20 @@ export default function Playlist({
 					{genres.map((x) => (
 						<li
 							onClick={toggleGenre.bind(null, x)}
-							style={{ textDecoration: excludedGenres.includes(x) ? "line-through" : "" }}
+							style={{textDecoration: excludedGenres.includes(x) ? "line-through" : ""}}
 						>
 							{x}
 						</li>
 					))}
 				</ul>
-				
+
 				<label>
 					<textarea id="textareaId"
-					rows="5" cols="33">
+					          rows="5" cols="33">
 					</textarea>
-					<br />Combine genres by keywords
+					<br/>Combine genres by keywords
 				</label>
-				
+
 				<label>
 					<input
 						type="number"
@@ -258,12 +314,12 @@ export default function Playlist({
 						value={minimumSizePlaylist}
 						onChange={(e) => setMinimumSizePlaylist(Number(e.target.value))}
 					/>
-					<br />
+					<br/>
 					Minimum size of genre playlist
 				</label>
 
 				<label>
-					<input type="checkbox" checked={onlyTopGenre} onChange={(e) => setOnlyTopGenre(e.target.checked)} />
+					<input type="checkbox" checked={onlyTopGenre} onChange={(e) => setOnlyTopGenre(e.target.checked)}/>
 					Only filter by main genre of song
 				</label>
 
@@ -282,7 +338,7 @@ export default function Playlist({
 				</label> */}
 
 				<div>
-					<button className="button" style={{ fontSize: "0.6rem" }} onClick={() => convert(true)}>
+					<button className="button" style={{fontSize: "0.6rem"}} onClick={() => convert(true)}>
 						Recalculate
 					</button>
 				</div>
@@ -293,12 +349,12 @@ export default function Playlist({
 					</button>
 				</div>
 
-				<div>{progress >= 100 ? "DONE" : progress && <progress max={100} value={progress}></progress>}</div>
+				<div>{progress >= 100 ? "DONE" : progress && <progress max={100} value={progress}/>}</div>
 			</Popup>
 
 			<div className="info">
 				<div className="art">
-					<img src={playlist.images.first()?.url} alt="Playlist cover" />
+					<img src={playlist.images.first()?.url} alt="Playlist cover"/>
 				</div>
 
 				<div className="meta">
@@ -307,47 +363,61 @@ export default function Playlist({
 					<div className="name">{playlist.name}</div>
 
 					<div className="actions">
+						<button onClick={() => refreshPlaylist()} className="button light save">
+							Refresh
+						</button>
 						<button onClick={() => openPopup(true) || convert(true)} className="button light save">
 							Separate into genres
 						</button>
-						<button onClick={() => dedup()} className="button light save">
+						<button
+							style={(playlist.owner.id === user.id || playlist.collaborative) ? {} : {display: 'none'}}
+							onClick={() => removeTracks(playlist, ERemovalMode.Dedup)}
+							className="button light save">
 							Remove duplicates
+						</button>
+						<button
+							style={(playlist.owner.id === user.id || playlist.collaborative) ? {} : {display: 'none'}}
+							onClick={() => removeTracks(playlist, ERemovalMode.Unavailable)}
+							className="button light save">
+							Remove unavailable
 						</button>
 					</div>
 				</div>
 			</div>
 
-			{previewUrl && <audio src={previewUrl} controls autoPlay loop></audio>}
+			{previewUrl && <audio src={previewUrl} controls autoPlay loop/>}
 
 			<table className="tracks">
 				<thead className="heading">
+				<tr>
 					<td className="number">#</td>
 
 					<td className="title">Song</td>
 					<td className="genre">Genre</td>
 
 					<td className="length">Length</td>
+				</tr>
 				</thead>
 
 				<tbody>
-					{playlist.tracks.items.map((x, i) => (
-						<tr
-							onClick={setPreviewUrl.bind(null, x.track.preview_url)}
-							className="track"
-							key={x.track.id + i + playlist.id}
-						>
-							<td className="number">{i + 1}</td>
+				{playlist.tracks.items.map((x, i) => (
+					<tr
+						onClick={setPreviewUrl.bind(null, x.track.preview_url)}
+						className="track"
+						key={x.track.id + i.toString() + playlist.id}
+					>
+						<td className="number">{i + 1}</td>
 
-							<td className="title">{x.track.name}</td>
-							<td className="genre">
-								{x.track.genres.map((x) => (
-									<p>{x}</p>
-								))}
-							</td>
+						<td className="title">{x.track.name}</td>
+						<td className="genre">
+							{x.track.genres.map((x) => (
+								<p>{x}</p>
+							))}
+						</td>
 
-							<td className="length">{millisToMinutesAndSeconds(x.track.duration_ms)}</td>
-						</tr>
-					))}
+						<td className="length">{millisToMinutesAndSeconds(x.track.duration_ms)}</td>
+					</tr>
+				))}
 				</tbody>
 			</table>
 		</div>

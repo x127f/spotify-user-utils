@@ -11,10 +11,10 @@ import { Footer } from "./components/Footer";
 function App() {
 	return (
 		<>
-			<Route exact path="/" component={LandingPage}></Route>
-			<Route exact path="/authenticate" component={AuthenticatePage}></Route>
+			<Route exact path="/" component={LandingPage}/>
+			<Route exact path="/authenticate" component={AuthenticatePage}/>
 			<PrivateRoute exact path="/overview">
-				<OverviewPage></OverviewPage>
+				<OverviewPage/>
 			</PrivateRoute>
 		</>
 	);
@@ -46,7 +46,7 @@ ReactDOM.render(
 	<React.StrictMode>
 		<BrowserRouter>
 			<Switch>
-				<App></App>
+				<App/>
 			</Switch>
 		</BrowserRouter>
 		<Footer />

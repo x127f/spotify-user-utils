@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import "./Popup.scss";
 
 export function Popup({ open, children, setOpen }: { open: boolean; children: ReactNode; setOpen: any }) {
@@ -17,7 +17,7 @@ export function Popup({ open, children, setOpen }: { open: boolean; children: Re
 		return () => {
 			document.removeEventListener("mousedown", eventhandler);
 		};
-	}, []);
+	}, [setOpen]);
 
 	return (
 		<div ref={ref} className={`popup ${open && "open"}`}>

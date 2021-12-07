@@ -1,3 +1,4 @@
+@use 'sass:math';
 @import "../index.scss";
 
 .playlist {
@@ -46,7 +47,7 @@
 
 			.name {
 				color: $white;
-				font-size: $xx-large / 1.2;
+				font-size: math.div($xx-large, 1.2);
 				font-weight: 100;
 			}
 
