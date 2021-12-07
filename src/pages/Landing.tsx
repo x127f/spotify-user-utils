@@ -1,11 +1,11 @@
-import { Redirect } from "react-router";
+import { Navigate } from "react-router";
 import spotify, { useAuth } from "../util/spotify";
 import "./Landing.scss";
 
 export default function LandingPage() {
 	const access_token = useAuth();
 	//console.log({ access_token });
-	if (access_token) return <Redirect to="/overview"/>;
+	if (access_token) return <Navigate to="/overview"/>;
 
 	return (
 		<div className="page landing">
