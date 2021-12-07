@@ -5,7 +5,7 @@ const spotify = new SpotifyWebApi({
 	redirectUri:
 		process.env.NODE_ENV === "development"
 			? "http://localhost:3000/authenticate"
-			: "https://grabberskitter-6r95f1-49538157207418.stormkit.dev/authenticate",
+			: "https://grabberskitter-6r95f1.stormkit.dev/authenticate",
 });
 export default spotify;
 
