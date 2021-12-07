@@ -5,7 +5,7 @@ const spotify = new SpotifyWebApi({
 	redirectUri:
 		process.env.NODE_ENV === "development"
 			? "http://localhost:3000/authenticate"
-			: "https://spotify-user-utils.vercel.app/authenticate",
+			: "https://spotify-user-utils.netlify.app/authenticate",
 });
 export default spotify;
 
