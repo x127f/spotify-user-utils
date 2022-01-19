@@ -2,235 +2,261 @@
 @import "../index.scss";
 
 .playlist {
-	.genres {
-		li {
-			cursor: pointer;
-		}
-	}
+  .genres {
+    li {
+      cursor: pointer;
+    }
+  }
 
-	audio {
-		position: sticky;
-		top: 0;
-	}
+  audio {
+    position: sticky;
+    top: 0;
+  }
 
-	.popup {
-		.yellow {
-			position: sticky;
-			top: 0;
-			background: #020202;
-		}
-	}
+  .popup {
+    .yellow {
+      position: sticky;
+      top: 0;
+      background: #020202;
+    }
+  }
 
-	.info {
-		margin-bottom: $margin;
-		display: flex;
-		flex-flow: row wrap;
+  .info {
+    margin-bottom: $margin;
+    display: flex;
+    flex-flow: row wrap;
 
-		.art {
-			img {
-				width: 135px;
-				height: 135px;
-			}
-		}
+    .art {
+      img {
+        width: 135px;
+        height: 135px;
+      }
+    }
 
-		.meta {
-			width: calc(100% - 150px);
-			margin-left: $margin;
+    .meta {
+      width: calc(100% - 150px);
+      margin-left: $margin;
 
-			display: flex;
-			flex-flow: column wrap;
+      display: flex;
+      flex-flow: column wrap;
 
-			.year {
-				color: $grey;
-				letter-spacing: 1px;
-			}
+      .year {
+        color: $grey;
+        letter-spacing: 1px;
+      }
 
-			.name {
-				color: $white;
-				font-size: math.div($xx-large, 1.2);
-				font-weight: 100;
-			}
+      .name {
+        color: $white;
+        font-size: math.div($xx-large, 1.2);
+        font-weight: 100;
+      }
 
-			.actions {
-				margin-top: auto;
+      .actions {
+        margin-top: auto;
 
-				.save {
-					padding-left: $padding-lg;
-					padding-right: $padding-lg;
-					margin-right: $margin-sm;
+        .save {
+          padding-left: $padding-lg;
+          padding-right: $padding-lg;
+          margin-right: $margin-sm;
 
-					&:hover {
-						border-color: $green;
-					}
-				}
+          &:hover {
+            border-color: $green;
+          }
+        }
 
-				.more {
-					width: 27px;
-					height: 27px;
-					border-radius: 50%;
-					padding: 0;
-					text-align: center;
-				}
-			}
-		}
-	}
+        .more {
+          width: 27px;
+          height: 27px;
+          border-radius: 50%;
+          padding: 0;
+          text-align: center;
+        }
+      }
+    }
+  }
 
-	.tracks {
-		border-spacing: 0;
-		margin-bottom: $margin;
+  .tracks {
+    border-spacing: 0;
+    margin-bottom: $margin;
 
-		.heading {
-			color: $grey;
-			height: 42px;
-			// display: flex;
-			// flex-flow: row wrap;
-			// align-items: center;
+    .heading {
+      color: $grey;
+      height: 42px;
+      // display: flex;
+      // flex-flow: row wrap;
+      // align-items: center;
 
-			.number {
-				margin-left: $margin-sm;
-				font-style: italic;
-			}
+      .number {
+        margin-left: $margin-sm;
+        font-style: italic;
+      }
 
-			.title {
-				margin-left: 30px;
-				width: 45%;
-				text-transform: uppercase;
-				letter-spacing: 1px;
-			}
+      .title {
+        margin-left: 30px;
+        width: 45%;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
 
-			.length {
-				margin-left: auto;
-				font-size: $large;
-			}
+      .genre {
+        margin-left: auto;
+        font-size: $large;
+      }
+      
+      .length {
+        margin-left: auto;
+        font-size: $large;
+      }
 
-			.popularity {
-				font-size: $large;
-				margin-left: 55px;
-				padding-right: $padding-sm;
-			}
-		}
+      .popularity {
+        font-size: $large;
+        margin-left: 55px;
+        padding-right: $padding-sm;
+      }
 
-		tr:nth-child(even) {
-			background-color: $light-black;
-		}
+      .original {
+        margin-left: auto;
+        font-style: italic;
+      }
 
-		.track {
-			// border-top: 1px solid $light-black;
-			height: 42px;
-			cursor: pointer;
-			padding: 0.5rem;
-			// display: flex;
-			// flex-flow: row wrap;
-			// align-items: center;
+      .playlistName {
+        margin-left: $margin-sm;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+    }
 
-			&:last-child {
-				// border-bottom: 1px solid $light-black;
-			}
+    tr:nth-child(even) {
+      background-color: $light-black;
+    }
 
-			.art {
-				img {
-					width: 42px;
-					height: 42px;
-				}
-			}
+    .track {
+      // border-top: 1px solid $light-black;
+      height: 42px;
+      cursor: pointer;
+      padding: 0.5rem;
+      // display: flex;
+      // flex-flow: row wrap;
+      // align-items: center;
 
-			.number {
-				margin-left: $margin-sm;
-				color: $grey;
-				width: 12px;
-			}
+      &:last-child {
+        // border-bottom: 1px solid $light-black;
+      }
 
-			.added {
-				margin-left: $margin * 2;
-				color: $sand;
+      .art {
+        img {
+          width: 42px;
+          height: 42px;
+        }
+      }
 
-				.added {
-					color: $sand;
-				}
+      .number {
+        margin-left: $margin-sm;
+        color: $grey;
+        width: 12px;
+      }
 
-				.not-added {
-					color: $grey;
-				}
-			}
+      .added {
+        margin-left: $margin * 2;
+        color: $sand;
 
-			.title {
-				width: 45%;
-				margin-left: $margin * 2;
-				color: $white;
-			}
+        .added {
+          color: $sand;
+        }
 
-			.explicit {
-				.label {
-					border: 1px;
-					border-style: solid;
-					border-color: lighten($light-black, 10%);
-					color: lighten($light-black, 10%);
-					text-transform: uppercase;
-				}
-			}
+        .not-added {
+          color: $grey;
+        }
+      }
 
-			.plays {
-				color: $grey;
-				margin-left: auto;
-				padding-right: $padding-sm;
-			}
+      .title {
+        width: 45%;
+        margin-left: $margin * 2;
+        color: $white;
+      }
 
-			.genre {
-				width: 10%;
-				text-overflow: ellipsis;
-				white-space: nowrap;
-				overflow: hidden;
-			}
+      .explicit {
+        .label {
+          border: 1px;
+          border-style: solid;
+          border-color: lighten($light-black, 10%);
+          color: lighten($light-black, 10%);
+          text-transform: uppercase;
+        }
+      }
 
-			.length {
-				margin-left: auto;
-				color: $grey;
-			}
+      .plays {
+        color: $grey;
+        margin-left: auto;
+        padding-right: $padding-sm;
+      }
 
-			.popularity {
-				margin-left: 46px;
-				padding-right: $padding-sm;
-				font-size: $large;
-				color: $grey;
-			}
-		}
-	}
+      .genre {
+        width: 10%;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .length {
+        margin-left: auto;
+        color: $grey;
+      }
+
+      .popularity {
+        margin-left: 46px;
+        padding-right: $padding-sm;
+        font-size: $large;
+        color: $grey;
+      }
+
+      .playlistName {
+        margin-left: $margin-sm;
+        color: $white;
+      }
+
+      .original {
+        margin-left: auto;
+        color: $white;
+      }
+    }
+  }
 }
 
 @media (max-width: 1200px) {
-	.tracks {
-		.heading {
-			.title {
-				width: auto;
-			}
+  .tracks {
+    .heading {
+      .title {
+        width: auto;
+      }
 
-			.popularity {
-				display: none;
-			}
-		}
+      .popularity {
+        display: none;
+      }
+    }
 
-		.track {
-			.title {
-				width: auto !important;
-			}
+    .track {
+      .title {
+        width: auto !important;
+      }
 
-			.explicit {
-				display: none;
-			}
+      .explicit {
+        display: none;
+      }
 
-			.popularity {
-				display: none;
-			}
-		}
-	}
+      .popularity {
+        display: none;
+      }
+    }
+  }
 }
 
 @media (max-width: 1200px) {
-	.playlist {
-		.tracks {
-			.track {
-				padding: $padding-sm 0;
-			}
-		}
-	}
+  .playlist {
+    .tracks {
+      .track {
+        padding: $padding-sm 0;
+      }
+    }
+  }
 }

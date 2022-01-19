@@ -5,7 +5,7 @@ import "./Playlist.scss";
 import "missing-native-js-functions";
 import {Popup} from "./Popup";
 
-function millisToMinutesAndSeconds(millis: number) {
+export function millisToMinutesAndSeconds(millis: number) {
 	var minutes = Math.floor(millis / 60000);
 	var seconds = Math.floor((millis % 60000) / 1000);
 	return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
@@ -13,14 +13,17 @@ function millisToMinutesAndSeconds(millis: number) {
 
 export default function Playlist({
 	                                 id,
-	                                 playlists: pl,
+	                                 playlists,
+	                                 canSelectRef
                                  }: {
 	id: string;
 	playlists: SpotifyApi.PlaylistObjectSimplified[];
+	canSelectRef: React.MutableRefObject<boolean>;
 }) {
 	const [playlist, setPlaylist] = useState<SpotifyApi.SinglePlaylistResponse | null>(null);
 	const artists = new Map<string, SpotifyApi.ArtistObjectFull>();
 	const [popup, openPopup] = useState(false);
+	const [popupRemove, openPopupRemove] = useState(false);
 	const [count, setCount] = useState(0);
 	const [minimumSizePlaylist, setMinimumSizePlaylist] = useState(30);
 	const [genres, setGenres] = useState<string[]>([]);
@@ -32,12 +35,16 @@ export default function Playlist({
 	const [previewUrl, setPreviewUrl] = useState(null);
 	const [user, setUser] = useState(null);
 	const [country, setCountry] = useState('');
+	const [deleteList, setDeleteList] = useState<trackInfo[]>([]);
 
-	const playlists = [...pl];
+	interface trackInfo {
+		index: number,
+		original: string
+	}
 
-	// eslint-disable-next-line
 	async function handleTracks(items: SpotifyApi.PlaylistTrackObject[]) {
 		// items = items.filter((x) => !!x.track.id); // filter local songs
+		console.log("handleTracks");
 
 		var artistIds = items
 			.map((x) => x.track.artists.map((y) => y.id))
@@ -51,7 +58,9 @@ export default function Playlist({
 			artistIds = artistIds.slice(50);
 
 			const {body} = await spotify.getArtists(batch);
-			body.artists.forEach((x) => { if (x && x.id) artists.set(x.id, x) });
+			body.artists.forEach((x) => {
+				if (x && x.id) artists.set(x.id, x)
+			});
 		}
 
 		items.forEach(
@@ -64,10 +73,11 @@ export default function Playlist({
 		return items;
 	}
 
-	function refreshPlaylist(inCountry: string = '') {
+	async function refreshPlaylist(inCountry: string = '') {
 		if (!inCountry) inCountry = country;
 		if (!inCountry) return;
 
+		setPreviewUrl(null);
 		spotify.getPlaylist(id, {market: inCountry}).then(async ({body: state}) => {
 			state.tracks.items = await handleTracks(state.tracks.items);
 			setPlaylist(state);
@@ -84,6 +94,7 @@ export default function Playlist({
 
 				setPlaylist({...state});
 			}
+			canSelectRef.current = true;
 		});
 	}
 
@@ -204,61 +215,64 @@ export default function Playlist({
 	async function removeTracks(curPlaylist: SpotifyApi.SinglePlaylistResponse, mode: ERemovalMode) {
 		if (!curPlaylist) return;
 
-		let trackPos = [...curPlaylist.tracks.items];
+		let trackList: trackInfo[] = [];
+		const tracks = curPlaylist.tracks.items;
+		for (let i = 0; i < tracks.length; i++) {
+			if (tracks[i].track.type === 'track') {
+				trackList.push({
+					track: tracks[i].track,
+					index: i,
+					original: ''
+				});
+			}
+		}
 		let str = '';
 		switch (+mode) {
 			case ERemovalMode.Dedup:
 				str = ' duplicated ';
-				//search for duplicates...
-				trackPos = trackPos
-					.map((x) => x.track.uri)
-					.map((x, i, a) => a.indexOf(x) !== i ? i : -1);
-
+				//search for duplicates and leave only them
+				const trackUri = trackList.map((x) => x.track.uri);
+				for (let i = 0; i < trackList.length; i++) {
+					const indexOfTrack = trackUri.indexOf(trackList[i].track.uri);
+					if (indexOfTrack !== i) {
+						const orig = trackList[indexOfTrack];
+						trackList[i].original = '#' + (orig.index + 1);
+					}
+				}
+				trackList = trackList.filter((x) => !!x.original);
 				break;
 			case ERemovalMode.Unavailable:
 				str = ' unavailable ';
-				//search for unavailables songs...
-				trackPos = trackPos
-					.map((x, i) =>
-						(x.track.type === 'track' && x.track.is_playable === false) ? i : -1);
+				//search for unavailables songs and leave only them
+				trackList = trackList.filter((x) => x.track.is_playable === false);
 				break;
 			default:
 				return;
 		}
-		//...and leave only them
-		trackPos = trackPos.filter((x) => x >= 0);
 
-		//get track names
-		let trackNames = [];
-		for (let i = 0; i < trackPos.length; ++i) {
-			const track = curPlaylist.tracks.items[trackPos[i]].track;
-			trackNames.push((trackPos[i] + 1) + '-' + track.name);
-		}
-
-		//sorting in descending order
-		trackPos = trackPos.sort((x, y) => y - x);
-
-		//removing
-		if (trackPos.length) {
-			const allow = window.confirm(`Delete ${trackPos.length} ${str} tracks?\n${trackNames.toString()}`);
-			if (allow) {
-				while (trackPos.length) {
-					const list = (await spotify.getPlaylist(curPlaylist.id)).body;
-					const batch = trackPos.slice(0, 100);
-					trackPos = trackPos.slice(100);
-					await spotify.removeTracksFromPlaylistByPosition(list.id, batch, list.snapshot_id);
-					batch.forEach((x) => curPlaylist.tracks.items.splice(x));
-				}
-				// curPlaylist.tracks.total = curPlaylist.tracks.items.length;
-				refreshPlaylist();
-			}
+		if (trackList.length) {
+			setDeleteList(trackList);
+			openPopupRemove(true);
 		} else {
 			alert('No' + str + 'tracks!');
 		}
-		//TODO: Better UI
 	}
 
-	if (!playlist) return <div>Loading playlist ...</div>;
+	async function ConfirmRemoval() {
+		let trackList = [...deleteList]
+			.map((x) => x.index)
+			.sort((x, y) => y - x);
+		const list = (await spotify.getPlaylist(playlist.id)).body;
+		while (trackList.length) {
+			const batch = trackList.slice(0, 100);
+			trackList = trackList.slice(100);
+			await spotify.removeTracksFromPlaylistByPosition(list.id, batch, list.snapshot_id);
+			batch.forEach((x) => playlist.tracks.items.splice(x, 1));
+		}
+		setDeleteList([]);
+		openPopup(false);
+		refreshPlaylist();
+	}
 
 	function toggleGenre(genre) {
 		var list = [...excludedGenres];
@@ -269,7 +283,9 @@ export default function Playlist({
 		setExcludedGenres(list);
 	}
 
-	// console.log({ previewUrl });
+	/********************************************************************************************/
+
+	if (!playlist) return <div>Loading playlist ...</div>;
 
 	return (
 		<div className="playlist">
@@ -300,6 +316,12 @@ export default function Playlist({
 					))}
 				</ul>
 
+				<div>
+					<button className="button" style={{fontSize: "0.6rem"}} onClick={() => convert(true)}>
+						Recalculate
+					</button>
+				</div>
+
 				<label>
 					<textarea id="textareaId"
 					          rows="5" cols="33">
@@ -320,28 +342,13 @@ export default function Playlist({
 
 				<label>
 					<input type="checkbox" checked={onlyTopGenre} onChange={(e) => setOnlyTopGenre(e.target.checked)}/>
-					Only filter by main genre of song
+					Only filter by main genre of artist
 				</label>
 
 				<label>
 					<input type="checkbox" checked={noDuplicates} onChange={(e) => setNoDuplicates(e.target.checked)}/>
 					Do not duplicate songs
 				</label>
-
-				{/* <label>
-					<input
-						type="checkbox"
-						value={clearPlaylists}
-						onChange={(e) => setclearPlaylists(e.target.checked)}
-					/>
-					Clear genre playlists
-				</label> */}
-
-				<div>
-					<button className="button" style={{fontSize: "0.6rem"}} onClick={() => convert(true)}>
-						Recalculate
-					</button>
-				</div>
 
 				<div>
 					<button className="button dark" onClick={() => convert(false)}>
@@ -350,6 +357,51 @@ export default function Playlist({
 				</div>
 
 				<div>{progress >= 100 ? "DONE" : progress && <progress max={100} value={progress}/>}</div>
+			</Popup>
+
+			<Popup open={popupRemove} setOpen={openPopupRemove}>
+				<h1 style={{fontSize: "2rem"}}>Delete List</h1>
+				<div>
+					<button className="button dark" style={{padding: "0.5rem"}} onClick={() => ConfirmRemoval()}>
+						Remove
+					</button>
+					<button className="button" style={{padding: "0.5rem", marginLeft: "20px"}}
+					        onClick={() => {
+						        setDeleteList([]);
+						        openPopupRemove(false)
+					        }}>
+						Cancel
+					</button>
+				</div>
+
+				<table className="tracks" width={deleteList.length && deleteList[0].original ? "70%" : "60%"}>
+					<thead className="heading">
+					<tr>
+						<th className="number">#</th>
+						<th className="title">Song</th>
+						<th className="length">Length</th>
+						{deleteList.length && deleteList[0].original ? <th className="title">Original</th> : null}
+					</tr>
+					</thead>
+					<tbody>
+					{deleteList.map((x, i) => (
+						<tr
+							className="track"
+							key={x.index.toString() + i.toString()}
+						>
+							<td className="number">{x.index + 1}</td>
+							<td className="title">{playlist.tracks.items[x.index].track.name}</td>
+							<td className="length">{millisToMinutesAndSeconds(playlist.tracks.items[x.index].track.duration_ms)}</td>
+							{deleteList[0].original
+								? <td className="number">
+									{x.original && (i === 0 || x.original !== deleteList[i - 1].original) ? x.original : null}
+								</td>
+								: null
+							}
+						</tr>
+					))}
+					</tbody>
+				</table>
 			</Popup>
 
 			<div className="info">
@@ -402,20 +454,23 @@ export default function Playlist({
 				<tbody>
 				{playlist.tracks.items.map((x, i) => (
 					<tr
-						onClick={setPreviewUrl.bind(null, x.track.preview_url)}
 						className="track"
-						key={x.track.id + i.toString() + playlist.id}
+						key={x.track.id + i.toString()}
 					>
 						<td className="number">{i + 1}</td>
 
-						<td className="title">{x.track.name}</td>
+						<td className="title" onClick={setPreviewUrl.bind(null, x.track.preview_url)}>
+							{x.track.name}
+						</td>
 						<td className="genre">
-							{x.track.genres.map((x) => (
-								<p>{x}</p>
+							{x.track.genres.map((y, j) => (
+								<p key={x.track.id + i.toString() + y + j.toString()}>{y}</p>
 							))}
 						</td>
 
 						<td className="length">{millisToMinutesAndSeconds(x.track.duration_ms)}</td>
+						<td><a href={x.track.uri} style={{fontSize: "80%", textDecoration: "none"}}>PLAY ON SPOTIFY</a>
+						</td>
 					</tr>
 				))}
 				</tbody>

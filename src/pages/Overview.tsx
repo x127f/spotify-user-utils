@@ -1,8 +1,10 @@
-import {useEffect, useState} from "react";
-import spotify, {getAllUserPlaylists} from "../util/spotify";
-import "./Overview.scss";
-import Playlist from "../components/Playlist";
-import "missing-native-js-functions";
+import {useEffect, useRef, useState} from 'react';
+import spotify, {getAllUserPlaylists} from '../util/spotify';
+import './Overview.scss';
+import Playlist from '../components/Playlist';
+import {millisToMinutesAndSeconds} from '../components/Playlist';
+import {Popup} from "../components/Popup";
+import 'missing-native-js-functions';
 
 export default function OverviewPage() {
 	const [playlists, setPlaylist] = useState<SpotifyApi.PlaylistObjectSimplified[]>([]);
@@ -12,10 +14,24 @@ export default function OverviewPage() {
 	const [country, setCountry] = useState('');
 	const [dedupMax, setDedupMax] = useState(0);
 	const [dedupProgress, setDedupProgress] = useState(0);
-	
+	const [popup, openPopup] = useState(false);
+	const [selectedElnt, setSelectedElnt] = useState<HTMLDivElement | undefined>(undefined);
+	const [deleteList, setDeleteList] = useState<trackInfo[]>([]);
+
+	var enterTarget: EventTarget | null = null;
+
+	const canSelectRef = useRef(true);
+
+	interface trackInfo {
+		track: any,
+		index: number,
+		playlist: SpotifyApi.SinglePlaylistResponse,
+		original: string
+	}
+
 
 	useEffect(() => {
-		//console.log("fetch playlists");
+		//console.log('fetch playlists');
 		spotify.getMe().then(async ({body: state}) => {
 			setUser(state.id);
 		});
@@ -23,10 +39,12 @@ export default function OverviewPage() {
 			setCountry(state.country);
 		});
 		getAllUserPlaylists().then((x) => setPlaylist(x.items));
-		return;
+
 	}, []);
 
-	var dedupArray: any[] = dedupPlaylists;
+	function timeout(delay: number) {
+		return new Promise(res => setTimeout(res, delay));
+	}
 
 	enum ERemovalMode {
 		Dedup,
@@ -34,12 +52,6 @@ export default function OverviewPage() {
 	}
 
 	async function removeTracks(mode: ERemovalMode) {
-		interface trackInfo {
-			track: any,
-			index: number,
-			playlist: SpotifyApi.SinglePlaylistResponse
-		}
-
 		if (!!dedupMax) return;
 		setDedupProgress(0);
 		setDedupMax(0);
@@ -72,9 +84,10 @@ export default function OverviewPage() {
 			for (let i = 0; i < plIt.tracks.items.length; i++) {
 				if (plIt.tracks.items[i].track.type === 'track') {
 					trackList.push({
-						track: plIt.tracks.items[i].track || null,
+						track: plIt.tracks.items[i].track,
 						index: i,
-						playlist: plIt
+						playlist: plIt,
+						original: ''
 					});
 				}
 			}
@@ -85,13 +98,15 @@ export default function OverviewPage() {
 			case ERemovalMode.Dedup:
 				str = 'duplicated';
 				//search for duplicates and leave only them
-				const tracksUri = trackList.map((x) => x.track.uri);
+				const trackUri = trackList.map((x) => x.track.uri);
 				for (let i = 0; i < trackList.length; i++) {
-					if (tracksUri.indexOf(trackList[i].track.uri) === i) {
-						trackList[i].index = -1;
+					const indexOfTrack = trackUri.indexOf(trackList[i].track.uri);
+					if (indexOfTrack !== i) {
+						const orig = trackList[indexOfTrack];
+						trackList[i].original = orig.playlist.name + ' #' + (orig.index + 1);
 					}
 				}
-				trackList = trackList.filter((x) => x.index >= 0);
+				trackList = trackList.filter((x) => !!x.original);
 				break;
 			case ERemovalMode.Unavailable:
 				str = 'unavailable';
@@ -103,118 +118,208 @@ export default function OverviewPage() {
 				return;
 		}
 
-		//get track names
-		let trackNames = [];
-		let lastPlaylist = null;
-		for (const trackIt of trackList) {
-			if (lastPlaylist !== trackIt.playlist) {
-				trackNames.push(
-					(lastPlaylist ? '\n' : '')
-					+ '"' + trackIt.playlist.name + '"');
-				lastPlaylist = trackIt.playlist;
-			}
-			trackNames.push((trackIt.index + 1) + '-' + trackIt.track.name);
-		}
-
 		setDedupProgress(max);
-		await spotify.getMe(); //just timeout for rendering
+		await timeout(50); //timeout for rendering
 
 		if (trackList.length) {
-			const allow = window.confirm(`Delete ${trackList.length} ${str} tracks?\n${trackNames.toString()}`);
-			if (allow) {
-				while (trackList.length) {
-					let curPlaylist = trackList[0].playlist;
-					let curTrackList = trackList
-						.filter((x) => x.playlist === curPlaylist)
-						.sort((x, y) => y.index - x.index);
-					const list = (await spotify.getPlaylist(curPlaylist.id)).body;
-					while (curTrackList.length) {
-						const batch = curTrackList.slice(0, 100).map((x) => x.index);
-						curTrackList = curTrackList.slice(100);
-						await spotify.removeTracksFromPlaylistByPosition(list.id, batch, list.snapshot_id);
-						batch.forEach((x) => curPlaylist.tracks.items.splice(x));
-					}
-					trackList = trackList.filter((x) => x.playlist !== curPlaylist);
-				}
-			}
+			setDeleteList(trackList);
+			openPopup(true);
 		} else {
 			alert('No ' + str + ' tracks!');
 		}
 		setDedupMax(0);
 	}
 
+	async function ConfirmRemoval() {
+		let trackList = [...deleteList];
+		while (trackList.length) {
+			let curPlaylist = trackList[0].playlist;
+			let curTrackList = trackList
+				.filter((x) => x.playlist === curPlaylist)
+				.sort((x, y) => y.index - x.index);
+			const list = (await spotify.getPlaylist(curPlaylist.id)).body;
+			while (curTrackList.length) {
+				const batch = curTrackList.slice(0, 100).map((x) => x.index);
+				curTrackList = curTrackList.slice(100);
+				await spotify.removeTracksFromPlaylistByPosition(list.id, batch, list.snapshot_id);
+				batch.forEach((x) => curPlaylist.tracks.items.splice(x, 1));
+			}
+			trackList = trackList.filter((x) => x.playlist !== curPlaylist);
+		}
+		setDeleteList([]);
+		openPopup(false);
+	}
+
 	function cleanDedupList() {
 		setDedupMax(0);
-		dedupArray = [];
-		setDedup(dedupArray);
+		setDedup([]);
 	}
-
-	const entryMouseDownHandler = function (e: any) {
-		e.dataTransfer.setData("playlist", e.target.getAttribute("data-playlist"));
-	}
-
-	const dragOverHandler = function (e: React.FormEvent<HTMLDivElement>) {
-		e.preventDefault();
-	}
-
-	const dropHandler = function (e: any) {
-		let playlistId = e.dataTransfer.getData("playlist");
-		let playlist = playlists.find((x) => x.id === playlistId);
-		if (playlist && !dedupArray.includes(playlist) && (playlist.owner.id === user || playlist.collaborative)) {
-			dedupArray.push(playlist);
-			const newPlaylists = [...dedupArray];
-			setDedup(newPlaylists);
+	
+	function selectPlaylistHelper(id : string)
+	{
+		if (canSelectRef.current) {
+			selectPlaylist(id);
+			canSelectRef.current = false;
 		}
 	}
 
+	/*Drag & Drop*/
+
+	const entryDragStartHandler = function (e: any) {
+		setSelectedElnt(e.target);
+	}
+
+	const dropHandler = function (e: any) {
+		e.preventDefault();
+		setSelectedElnt(undefined);
+		enterTarget = null;
+	}
+
+	const dragEnterHandler = function (e: any) {
+		e.preventDefault();
+		if (e.target.className === 'playlistsDedup' && enterTarget === null) dragEntry('');
+		enterTarget = e.target;
+	}
+
+	const dragLeaveHandler = function (e: any) {
+		if (enterTarget === e.target && selectedElnt) {
+			const tempArray = dedupPlaylists.filter((x) => x.id !== selectedElnt.dataset.playlist);
+			setDedup(tempArray);
+			enterTarget = null;
+		}
+	}
+
+	function dragEntry(hoveredPl: string) {
+		if (!selectedElnt || selectedElnt.dataset.playlist === hoveredPl) return;
+
+		const selectedPl = playlists.find((x) => x.id === selectedElnt.dataset.playlist);
+		if (selectedPl && (selectedPl.owner.id === user || selectedPl.collaborative)) {
+			let elntHoveredIndex = dedupPlaylists.length;
+			if (hoveredPl) {
+				elntHoveredIndex = dedupPlaylists.findIndex((x) => x.id === hoveredPl);
+				if (elntHoveredIndex < 0) elntHoveredIndex = dedupPlaylists.length;
+			}
+
+			let tempDedupPlaylists = [...dedupPlaylists];
+			const elntOldIndex = dedupPlaylists.indexOf(selectedPl);
+			tempDedupPlaylists.splice(elntHoveredIndex, 0, (elntOldIndex > -1)
+				? tempDedupPlaylists.splice(elntOldIndex, 1)[0]
+				: selectedPl);
+
+			setDedup(tempDedupPlaylists);
+		}
+
+	}
+
+	/********************************************************************************************/
+
 	return (
 		<div className="page overview">
-			<h2 className="centeredText">Overview</h2>
+			<img width="7%" src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png"
+			     alt=""/>
+			{/*<h2 className="centeredText">Overview</h2>*/}
+
+			<Popup open={popup} setOpen={openPopup}>
+				<h1 style={{fontSize: "2rem"}}>Delete List</h1>
+				<div>
+					<button className="button dark" style={{padding: "0.5rem"}} onClick={() => ConfirmRemoval()}>
+						Remove
+					</button>
+					<button className="button" style={{padding: "0.5rem", marginLeft: "20px"}}
+					        onClick={() => {
+						        setDeleteList([]);
+						        openPopup(false)
+					        }}>
+						Cancel
+					</button>
+				</div>
+
+				<table className="tracks" width={deleteList.length && deleteList[0].original ? "70%" : "60%"}>
+					<thead className="heading">
+					<tr>
+						<th className="playlistName">Playlist</th>
+						<th className="number">#</th>
+						<th className="title">Song</th>
+						<th className="length">Length</th>
+						{deleteList.length && deleteList[0].original ? <th className="original">Original</th> : null}
+					</tr>
+					</thead>
+					<tbody>
+					{deleteList.map((x, i) => (
+						<tr
+							className="track"
+							key={x.playlist.id + x.track.id + x.index}
+						>
+							<td className="playlistName">{i === 0 || x.playlist !== deleteList[i - 1].playlist ? x.playlist.name : null}</td>
+							<td className="number">{x.index + 1}</td>
+							<td className="title">{x.track.name}</td>
+							<td className="length">{millisToMinutesAndSeconds(x.track.duration_ms)}</td>
+							{deleteList[0].original
+								? <td className="original">
+									{x.original && (i === 0 || x.original !== deleteList[i - 1].original) ? x.original : null}
+								</td>
+								: null
+							}
+						</tr>
+					))}
+					</tbody>
+				</table>
+			</Popup>
 
 			<div className="playlists">
 				{playlists.length === 0 && "Loading ... or you don't have any playlists"}
 				{playlists.map((x) => (
-					<div onClick={()=>selectPlaylist(x.id)} onDragStart={entryMouseDownHandler}
+					<div onDragStart={entryDragStartHandler}
 					     draggable="true"
 					     data-playlist={x.id}
 					     key={x.id} className="entry">
-						<img src={x.images.first()?.url} data-playlist={x.id} alt={''}/>
-						{x.name}
+						<a href={x.uri} style={{fontSize: "75%", textDecoration: "none"}}>PLAY ON SPOTIFY</a>
+						<div onClick={() => selectPlaylistHelper(x.id)}>
+							<img src={x.images.first()?.url} data-playlist={x.id} alt={""}/>
+							{x.name}
+						</div>
 					</div>
 				))}
 			</div>
 
 			{!!dedupMax && (<progress max={dedupMax} value={dedupProgress}/>)}
-			<div className="playlistsDedup" onDragOver={dragOverHandler} onDrop={dropHandler}>
+			<div className="playlistsDedup"
+			     onDragOver={(e) => e.preventDefault()}
+			     onDragEnter={dragEnterHandler}
+			     onDragLeave={dragLeaveHandler}
+			     onDrop={dropHandler}>
 				{dedupPlaylists.map((x) => (
-					<div onClick={()=>selectPlaylist(x.id)}
+					<div onClick={() => selectPlaylistHelper(x.id)}
+					     onDragStart={entryDragStartHandler}
+					     onDragEnter={() => dragEntry(x.id)}
+					     draggable="true"
 					     data-playlist={x.id}
 					     key={x.id} className="entryDedup">
-						<img src={x.images.first()?.url} data-playlist={x.id} alt={''}/>
+						<img src={x.images.first()?.url} data-playlist={x.id} alt={""}/>
 						{x.name}
 					</div>
 				))}
-				<h2 className="dedupText">Drag&Drop playlists here for removing unavailable or duplicates tracks
-					<br/>(tracks are saved in the playlist earlier in the list)</h2>
+				<h2 className="dedupText">
+					{dedupPlaylists.length < 10 &&
+						<div>Drag&Drop playlists here for removing unavailable or duplicate tracks</div>}
+					{dedupPlaylists.length < 5 && <div>(tracks remain in the playlist earlier in the list)</div>}
+				</h2>
 			</div>
 
-			<div className="actions">
-				<button style={dedupPlaylists.length ? {} : {display: 'none'}}
-				        onClick={() => removeTracks(ERemovalMode.Dedup)} className="button light save">
+			<div className="actions" style={dedupPlaylists.length ? {} : {display: "none"}}>
+				<button onClick={() => removeTracks(ERemovalMode.Dedup)} className="button light save">
 					Remove duplicates
 				</button>
-				<button style={dedupPlaylists.length ? {} : {display: 'none'}}
-				        onClick={() => removeTracks(ERemovalMode.Unavailable)} className="button light save">
+				<button onClick={() => removeTracks(ERemovalMode.Unavailable)} className="button light save">
 					Remove unavailable tracks
 				</button>
-				<button style={dedupPlaylists.length ? {} : {display: 'none'}}
-				        onClick={() => cleanDedupList()} className="button light save">
+				<button onClick={() => cleanDedupList()} className="button light save">
 					Clean list
 				</button>
 			</div>
 
 			<br/>
-			{selectedPlaylist && <Playlist id={selectedPlaylist} playlists={playlists}/>}
+			{selectedPlaylist && <Playlist id={selectedPlaylist} playlists={playlists} canSelectRef={canSelectRef}/>}
 		</div>
 	);
 }

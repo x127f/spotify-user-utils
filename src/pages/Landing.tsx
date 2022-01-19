@@ -9,7 +9,7 @@ export default function LandingPage() {
 
 	return (
 		<div className="page landing">
-			<h1 className="h1">Spotify user utilities</h1>
+			<h1 className="h1">Playlist Sorter 'n' Cleaner</h1>
 			<a
 				className="button dark large"
 				href={spotify.createAuthorizeURL(
@@ -23,8 +23,13 @@ export default function LandingPage() {
 			<br />
 			<h2>Features</h2>
 			<ul>
-				<li>Sort your playlist by gerne and further divide them into separate playlists</li>
+				<li>Sort your playlists by genre and further divide them into separate playlists</li>
 				<li>Clean from duplicated and unavailable tracks</li>
+			</ul>
+			<br />
+			<h2>Known Limitations</h2>
+			<ul>
+				<li>Wait for the playlist to fully load</li>
 			</ul>
 		</div>
 	);

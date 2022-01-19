@@ -65,7 +65,9 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 ReactDOM.render(
 	<React.StrictMode>
 		<BrowserRouter>
+			{/*<Switch>*/}
 				<App/>
+			{/*</Switch>*/}
 		</BrowserRouter>
 		<Footer />
 	</React.StrictMode>,
