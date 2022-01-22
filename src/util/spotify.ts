@@ -5,7 +5,7 @@ const spotify = new SpotifyWebApi({
 	redirectUri:
 		process.env.NODE_ENV === "development"
 			? "http://localhost:3000/authenticate"
-			: "https://playlist-sorter-n-cleaner.vercel.app/authenticate",
+			: "https://www.sorter-for-spotify.tk/authenticate",
 });
 export default spotify;
 

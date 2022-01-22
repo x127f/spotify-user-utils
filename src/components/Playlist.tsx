@@ -44,7 +44,6 @@ export default function Playlist({
 
 	async function handleTracks(items: SpotifyApi.PlaylistTrackObject[]) {
 		// items = items.filter((x) => !!x.track.id); // filter local songs
-		console.log("handleTracks");
 
 		var artistIds = items
 			.map((x) => x.track.artists.map((y) => y.id))

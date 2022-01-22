@@ -1,8 +1,5 @@
-# spotify-playlist-sorter
-Easy website to sort your playlist by genre and further divide them into separate playlists,
-clean from duplicated and unavailable tracks.
-
-## [Demo]()
-
-![image](https://user-images.githubusercontent.com/34555296/119380564-304d1480-bcc1-11eb-89f3-f22c477196cf.png)
-![image](https://user-images.githubusercontent.com/34555296/119380624-435fe480-bcc1-11eb-8c97-0d470c7300d8.png)
+# Playlist Sorter 'n' Cleaner for Spotify
+Easy website to sort your playlist by genre and further divide them into separate playlists, 
+clean playlists from duplicated and unavailable tracks.
+Similar services can only remove duplicates inside a playlist, and cannot remove unavailable tracks,
+so when I came across an application from Flam3rboy that seemed u~~~~seful to me, then I expanded it with the necessary functionality.

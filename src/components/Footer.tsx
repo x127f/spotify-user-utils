@@ -1,4 +1,5 @@
 import "./Footer.scss";
+import KoFi from "./KoFi";
 
 export function Footer() {
 	return (
@@ -10,6 +11,9 @@ export function Footer() {
 
 			<a href="/">Made by ~Flam3rboy</a>
 			<a href="/">Extended by piomerti</a>
+			<div>
+				<KoFi color="#252525" id="G2G682RC3" label="Support Me" />
+			</div>
 		</div>
 	);
 }
