@@ -269,7 +269,7 @@ export default function Playlist({
 			batch.forEach((x) => playlist.tracks.items.splice(x, 1));
 		}
 		setDeleteList([]);
-		openPopup(false);
+		openPopupRemove(false);
 		refreshPlaylist();
 	}
 
