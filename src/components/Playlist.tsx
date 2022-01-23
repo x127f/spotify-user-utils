@@ -25,7 +25,7 @@ export default function Playlist({
 	const [popup, openPopup] = useState(false);
 	const [popupRemove, openPopupRemove] = useState(false);
 	const [count, setCount] = useState(0);
-	const [minimumSizePlaylist, setMinimumSizePlaylist] = useState(30);
+	const [minimumSizePlaylist, setMinimumSizePlaylist] = useState(1);
 	const [genres, setGenres] = useState<string[]>([]);
 	const [excludedGenres, setExcludedGenres] = useState<string[]>([]);
 	const [onlyTopGenre, setOnlyTopGenre] = useState(false);

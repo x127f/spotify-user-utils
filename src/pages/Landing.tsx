@@ -20,17 +20,30 @@ export default function LandingPage() {
 				Login with Spotify
 			</a>
 
-			<br />
-			<h2>Features</h2>
-			<ul>
-				<li>Sort your playlists by genre and further divide them into separate playlists</li>
-				<li>Clean from duplicated and unavailable tracks</li>
-			</ul>
-			<br />
-			<h2>Known Limitations</h2>
-			<ul>
-				<li>Wait for the playlist to fully load</li>
-			</ul>
+			<div className="container">
+				<br />
+				<h2>👉 Get started 👈</h2>
+				<ul>
+					<li>Click on a playlist (and wait for it to load) to sort or clean it.</li>
+					<li>Or drag and drop it to a special area and adjust the order to clean several at once.</li>
+				</ul>
+				<br />
+				<h2>🎵 Features 🎵</h2>
+				<ul>
+					<li>Sort your playlists by genre and further divide them into separate playlists</li>
+					<li>Clean from duplicated and unavailable tracks</li>
+				</ul>
+				<br />
+				<h2>🙁 Known Limitations 🙁</h2>
+				<ul>
+					<li>Need to wait for the playlist to fully load</li>
+					<li>Unable to find unavailable local tracks because the Spotify Web API can't</li>
+				</ul>
+			</div>
+
+			<div className="bottomright">
+				v0.4
+			</div>
 		</div>
 	);
 }
