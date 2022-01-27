@@ -1,11 +1,11 @@
 import SpotifyWebApi from "spotify-web-api-node";
 
 const spotify = new SpotifyWebApi({
-	clientId: "570657b1b2564136a6bdc06e90fbe78d",
+	clientId: process.env.REACT_APP_CLIEND_ID,
 	redirectUri:
 		process.env.NODE_ENV === "development"
 			? "http://localhost:3000/authenticate"
-			: "https://www.sorter-for-spotify.tk/authenticate",
+			: process.env.REACT_APP_AUTHENTICATE_URL,
 });
 export default spotify;
 
@@ -32,9 +32,6 @@ export async function getAllUserPlaylists() {
 
 	return playlists;
 }
-
-// @ts-ignore
-window.test = spotify;
 
 export function useAuth() {
 	const expires_in = localStorage.getItem("expires_in");

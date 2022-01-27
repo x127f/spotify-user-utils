@@ -38,11 +38,12 @@ export default function LandingPage() {
 				<ul>
 					<li>Need to wait for the playlist to fully load</li>
 					<li>Unable to find unavailable local tracks because the Spotify Web API can't</li>
+					<li>Track genres are taken from artist genres (via the Spotify and Last.fm APIs), so they are not always relevant</li>
 				</ul>
 			</div>
 
 			<div className="bottomright">
-				v0.4
+				v0.5
 			</div>
 		</div>
 	);

@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useReducer, useRef, useState} from 'react';
 import spotify, {getAllUserPlaylists} from '../util/spotify';
 import './Overview.scss';
 import Playlist from '../components/Playlist';
@@ -17,10 +17,12 @@ export default function OverviewPage() {
 	const [popup, openPopup] = useState(false);
 	const [selectedElnt, setSelectedElnt] = useState<HTMLDivElement | undefined>(undefined);
 	const [deleteList, setDeleteList] = useState<trackInfo[]>([]);
+	const [, forceUpdate] = useReducer(x => x + 1, 0);
 
 	var enterTarget: EventTarget | null = null;
 
 	const canSelectRef = useRef(true);
+	const playlistRef = useRef('');
 
 	interface trackInfo {
 		track: any,
@@ -42,9 +44,6 @@ export default function OverviewPage() {
 
 	}, []);
 
-	function timeout(delay: number) {
-		return new Promise(res => setTimeout(res, delay));
-	}
 
 	enum ERemovalMode {
 		Dedup,
@@ -117,9 +116,10 @@ export default function OverviewPage() {
 				setDedupMax(0);
 				return;
 		}
+		trackList = trackList.filter((x) => x.playlist.owner.id === user || x.playlist.collaborative);
 
 		setDedupProgress(max);
-		await timeout(50); //timeout for rendering
+		forceUpdate();
 
 		if (trackList.length) {
 			setDeleteList(trackList);
@@ -154,13 +154,13 @@ export default function OverviewPage() {
 		setDedupMax(0);
 		setDedup([]);
 	}
-	
-	function selectPlaylistHelper(id : string)
-	{
-		if (canSelectRef.current) {
+
+	function selectPlaylistHelper(id: string) {
+		// if (canSelectRef.current) {
 			selectPlaylist(id);
+			playlistRef.current = id;
 			canSelectRef.current = false;
-		}
+		// }
 	}
 
 	/*Drag & Drop*/
@@ -193,7 +193,7 @@ export default function OverviewPage() {
 		if (!selectedElnt || selectedElnt.dataset.playlist === hoveredPl) return;
 
 		const selectedPl = playlists.find((x) => x.id === selectedElnt.dataset.playlist);
-		if (selectedPl && (selectedPl.owner.id === user || selectedPl.collaborative)) {
+		if (selectedPl /*&& (selectedPl.owner.id === user || selectedPl.collaborative)*/) {
 			let elntHoveredIndex = dedupPlaylists.length;
 			if (hoveredPl) {
 				elntHoveredIndex = dedupPlaylists.findIndex((x) => x.id === hoveredPl);
@@ -319,7 +319,7 @@ export default function OverviewPage() {
 			</div>
 
 			<br/>
-			{selectedPlaylist && <Playlist id={selectedPlaylist} playlists={playlists} canSelectRef={canSelectRef}/>}
+			{selectedPlaylist && <Playlist id={selectedPlaylist} idRef={playlistRef} playlists={playlists}/>}
 		</div>
 	);
 }

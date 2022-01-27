@@ -18,4 +18,12 @@
 			width: 64px;
 		}
 	}
+	ul {
+		display: flex;
+		justify-content: center;
+	}
+	li {
+		display:inline-block;
+		margin-right:20px;
+	}
 }

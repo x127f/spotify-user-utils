@@ -1,9 +1,10 @@
 // @ts-nocheck
-import {useEffect, useState} from "react";
+import {useEffect, useReducer, useState} from "react";
 import spotify from "../util/spotify";
 import "./Playlist.scss";
 import "missing-native-js-functions";
 import {Popup} from "./Popup";
+import getLastFmArtistTopTags from "../util/lastfm"
 
 export function millisToMinutesAndSeconds(millis: number) {
 	var minutes = Math.floor(millis / 60000);
@@ -11,17 +12,22 @@ export function millisToMinutesAndSeconds(millis: number) {
 	return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 }
 
+export function timeout(delay: number) {
+	return delay > 0 ? new Promise(resolve => setTimeout(resolve, delay)) : null;
+}
+
 export default function Playlist({
 	                                 id,
-	                                 playlists,
-	                                 canSelectRef
+	                                 idRef,
+	                                 playlists
                                  }: {
 	id: string;
+	idRef: React.MutableRefObject<string>;
 	playlists: SpotifyApi.PlaylistObjectSimplified[];
-	canSelectRef: React.MutableRefObject<boolean>;
 }) {
 	const [playlist, setPlaylist] = useState<SpotifyApi.SinglePlaylistResponse | null>(null);
 	const artists = new Map<string, SpotifyApi.ArtistObjectFull>();
+	const [artistsState, setArtistsState] = useState(artists);
 	const [popup, openPopup] = useState(false);
 	const [popupRemove, openPopupRemove] = useState(false);
 	const [count, setCount] = useState(0);
@@ -31,11 +37,17 @@ export default function Playlist({
 	const [onlyTopGenre, setOnlyTopGenre] = useState(false);
 	const [noDuplicates, setNoDuplicates] = useState(true);
 	const [progress, setProgress] = useState(false);
-	// const [clearPlaylists, setClearPlaylists] = useState(false);
 	const [previewUrl, setPreviewUrl] = useState(null);
 	const [user, setUser] = useState(null);
 	const [country, setCountry] = useState('');
 	const [deleteList, setDeleteList] = useState<trackInfo[]>([]);
+	const [, forceUpdate] = useReducer(x => x + 1, 0);
+
+	//LastFM
+	const REQUEST_DELAY = 25;
+	var reqCounter = 0;
+	const [reqCounterCopy, setReqCounterCopy] = useState(0);
+	const [reqCompleted, setReqCompleted] = useState(0);
 
 	interface trackInfo {
 		index: number,
@@ -53,22 +65,34 @@ export default function Playlist({
 			.filter((x) => x && !artists.has(x.id));
 
 		while (artistIds.length) {
+			if (id !== idRef.current) break; //abort
 			const batch = artistIds.slice(0, 50);
 			artistIds = artistIds.slice(50);
 
 			const {body} = await spotify.getArtists(batch);
-			body.artists.forEach((x) => {
-				if (x && x.id) artists.set(x.id, x)
-			});
+			for (const x of body.artists) {
+				if (x && x.id) {
+					artists.set(x.id, x);
+					if (x.genres?.length === 0) {
+						getLastFmArtistTopTags(x.name, x.id, process.env.REACT_APP_LASTFM_KEY, REQUEST_DELAY * reqCounter++)
+							.then(data => {
+								artists.get(data.id).genres = data.tags;
+								setArtistsState(artists);
+								setReqCompleted(x => x + 1);
+								forceUpdate();
+							})
+						setReqCounterCopy(reqCounter);
+					}
+				}
+			}
 		}
 
-		items.forEach(
-			(x) =>
-				(x.track.genres = x.track.artists
-					.map((y) => artists.get(y.id)?.genres || [])
-					.flat()
-					.unique())
-		);
+		for await (let x of items) {
+			x.track.genres = x.track.artists
+				.map((y) => artists.get(y.id)?.genres || [])
+				.flat()
+				.unique();
+		}
 		return items;
 	}
 
@@ -76,12 +100,18 @@ export default function Playlist({
 		if (!inCountry) inCountry = country;
 		if (!inCountry) return;
 
+		setPlaylist(null);
 		setPreviewUrl(null);
+		reqCounter = 0;
+		setReqCounterCopy(0);
+		setReqCompleted(0);
 		spotify.getPlaylist(id, {market: inCountry}).then(async ({body: state}) => {
 			state.tracks.items = await handleTracks(state.tracks.items);
 			setPlaylist(state);
+			handleTracks(state.tracks.items);
 
 			while (state.tracks.next) {
+				if (id !== idRef.current) return; //abort
 				// console.log("fetch tracks", state.tracks);
 
 				const {body: tracks} = await spotify.getPlaylistTracks(id, {
@@ -93,7 +123,6 @@ export default function Playlist({
 
 				setPlaylist({...state});
 			}
-			canSelectRef.current = true;
 		});
 	}
 
@@ -284,12 +313,13 @@ export default function Playlist({
 
 	/********************************************************************************************/
 
-	if (!playlist) return <div>Loading playlist ...</div>;
+	if (!playlist || id !== idRef.current) return <div>Loading playlist ...</div>;
 
 	return (
 		<div className="playlist">
-			{playlist.tracks.items.length !== playlist.tracks.total && (
-				<progress max={playlist.tracks.total} value={playlist.tracks.items.length}/>
+			{playlist.tracks.items.length + reqCompleted < playlist.tracks.total + reqCounterCopy && (
+				<progress value={playlist.tracks.items.length + reqCompleted}
+				          max={playlist.tracks.total + reqCounterCopy}/>
 			)}
 
 			<Popup open={popup} setOpen={openPopup}>
@@ -462,9 +492,18 @@ export default function Playlist({
 							{x.track.name}
 						</td>
 						<td className="genre">
-							{x.track.genres.map((y, j) => (
-								<p key={x.track.id + i.toString() + y + j.toString()}>{y}</p>
-							))}
+							{
+								(x.track.genres.length
+										? x.track.genres
+										: x.track.artists
+											.map((y) => artistsState.get(y.id)?.genres || [])
+											.flat()
+											.unique()
+								)
+									.map((z, j) => (
+										<p key={x.track.id + i.toString() + z + j.toString()}>{z}</p>
+									))
+							}
 						</td>
 
 						<td className="length">{millisToMinutesAndSeconds(x.track.duration_ms)}</td>
